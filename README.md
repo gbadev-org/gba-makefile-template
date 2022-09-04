@@ -13,7 +13,7 @@ devkitPRO, some things are not supported, notably:
 - Compression with gbalzss
 - GBFS creation
 
-Support for these rules may be added in the future
+Support for these rules may be added in the future.
 
 Things that are supported:
 
