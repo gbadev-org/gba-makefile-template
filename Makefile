@@ -5,8 +5,7 @@
 #
 
 ifeq ($(and $(strip $(DEVKITPRO)),$(strip $(DEVKITARM))),)
-$(error Make sure DEVKITPRO and DEVKITARM are correctly set in your environment \
-	\(source /etc/profile.d/devkit-env.sh\).)
+$(error Make sure DEVKITPRO and DEVKITARM are correctly set in your environment.)
 endif
 
 .SUFFIXES:
@@ -26,7 +25,13 @@ ROM_MAKERCODE	:=
 ROM_VERSION	:=
 
 # Source files
-SOURCES		:= src/main.c
+SOURCE_FILES	:= src/main.c
+
+# Source directories
+SOURCE_DIRS	:=
+
+# Source file extensions, for use with SOURCE_DIRS
+SOURCE_EXTS	:=
 
 # Include directories
 INCLUDES	:=
@@ -41,7 +46,8 @@ LIBS		:= gba
 BUILDDIR	:= build
 
 # Compiler flags (all languages)
-ALLFLAGS	:= -g3 -gdwarf-4 -O2 -ffunction-sections -fdata-sections
+ALLFLAGS	:= -g3 -gdwarf-4 -O2 -ffunction-sections -fdata-sections \
+		   -D_DEFAULT_SOURCE
 
 # C compiler flags
 CFLAGS		:= -std=c99
@@ -140,6 +146,10 @@ GFFLAGS	:= \
 	$(if $(strip $(ROM_GAMECODE)),'-c$(strip $(ROM_GAMECODE))',) \
 	$(if $(strip $(ROM_MAKERCODE)),'-m$(strip $(ROM_MAKERCODE))',) \
 	$(if $(strip $(ROM_VERSION)),'-r$(strip $(ROM_VERSION))',)
+
+SOURCES	:= $(SOURCE_FILES) \
+	   $(foreach dir,$(SOURCE_DIRS), \
+	   $(foreach ext,$(SOURCE_EXTS),$(wildcard $(dir)/*.$(ext))))
 
 # Build artifacts
 OBJECTS	:= $(foreach source,$(SOURCES),$(call obj,$(source)))
