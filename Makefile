@@ -129,7 +129,7 @@ ALLFLAGS += \
 	-mabi=aapcs \
 	-mthumb \
 	$(LIBDIRS:%=-I%/include) \
-	$(INCLUDES:%=-I%) \
+	$(INCLUDES:%=-iquote %) \
 	$(if $(USE_LTO),-flto,-fno-lto) \
 
 # Default linker flags
