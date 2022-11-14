@@ -1,14 +1,8 @@
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at https://mozilla.org/MPL/2.0/.
-#
+.SUFFIXES:
 
 ifeq ($(and $(strip $(DEVKITPRO)),$(strip $(DEVKITARM))),)
 $(error Make sure DEVKITPRO and DEVKITARM are correctly set in your environment.)
 endif
-
-.SUFFIXES:
 
 # Name of your ROM
 PROJECT		:= devkitarm-template
@@ -40,7 +34,7 @@ INCLUDES	:=
 LIBDIRS		:= $(DEVKITPRO)/libgba $(DEVKITPRO)/libtonc
 
 # Libraries to link
-LIBS		:= gba
+LIBS		:= tonc
 
 # All build output goes here
 BUILDDIR	:= build
@@ -125,9 +119,10 @@ MAPFILE	:= $(BUILDDIR)/$(PROJECT).map
 
 # Default compiler flags
 ALLFLAGS += \
+	-mthumb \
 	-mcpu=arm7tdmi \
 	-mabi=aapcs \
-	-mthumb \
+	-mfloat-abi=soft \
 	$(LIBDIRS:%=-I%/include) \
 	$(INCLUDES:%=-iquote %) \
 	$(if $(USE_LTO),-flto,-fno-lto) \

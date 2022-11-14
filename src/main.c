@@ -1,26 +1,17 @@
-/*
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/.
- */
-
-#include <stdbool.h>
-#include <stdio.h>
-
-#include <gba_console.h>
-#include <gba_interrupt.h>
-#include <gba_systemcalls.h>
+#include <tonc.h>
 
 int main(void)
 {
-    irqInit();
-    irqEnable(IRQ_VBLANK);
+    REG_DISPCNT = DCNT_MODE0 | DCNT_BG0;
 
-    consoleDemoInit();
+    tte_init_chr4c_default(0, BG_CBB(0) | BG_SBB(31));
+    tte_set_pos(92, 68);
+    tte_write("Hello World!");
 
-    iprintf("\x1b[10;10HHello, world!\n");
+    irq_init(NULL);
+    irq_enable(II_VBLANK);
 
-    while (true)
+    while (1)
     {
         VBlankIntrWait();
     }
