@@ -7,6 +7,10 @@ endif
 # Name of your ROM
 PROJECT		:= devkitarm-template
 
+# Uncomment this if you're building a library
+#
+# BUILD_LIB	:= yes
+
 # Options for gbafix (optional)
 #
 # Title:        12 characters
@@ -60,11 +64,6 @@ LDFLAGS		:= -mthumb \
 #
 # USE_LTO		:= yes
 
-# Toolchain prefix
-#
-# Only change this if you want to use a different compiler
-TOOLCHAIN	:= $(DEVKITARM)/bin/arm-none-eabi
-
 #
 # Internal Functions
 #
@@ -103,6 +102,9 @@ flags	= $(or \
 # Verbosity
 SILENT	:= $(if $(VERBOSE)$(V),,@)
 
+# Toolchain prefix
+TOOLCHAIN	:= $(DEVKITARM)/bin/arm-none-eabi
+
 # Tools
 CC 	:= $(TOOLCHAIN)-gcc
 CXX	:= $(TOOLCHAIN)-g++
@@ -116,6 +118,7 @@ RUNNER	:= mgba-qt
 ELFFILE	:= $(BUILDDIR)/$(PROJECT).elf
 ROMFILE	:= $(BUILDDIR)/$(PROJECT).gba
 MAPFILE	:= $(BUILDDIR)/$(PROJECT).map
+LIBFILE	:= $(BUILDDIR)/lib$(PROJECT).a
 
 # Default compiler flags
 ALLFLAGS += \
@@ -155,8 +158,13 @@ DIRS	:= $(dir $(BUILDDIR) $(OBJECTS) $(DEPENDS))
 # Targets
 #
 
+ifeq ($(strip $(BUILD_LIB)),)
 $(ROMFILE): $(ELFFILE)
 $(ELFFILE): $(OBJECTS)
+else
+$(LIBFILE): $(OBJECTS)
+endif
+
 $(OBJECTS): | dirs
 
 $(foreach source,$(SOURCES),$(eval $(call obj,$(source)): $(source)))
