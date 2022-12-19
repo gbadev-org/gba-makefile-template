@@ -9,7 +9,6 @@ Build options inside the Makefile are documented and hopefully easy to use.
 While care was taken to stay compatible with the makefiles provided by
 devkitPro, some things are not (yet) supported, notably:
 
-- bin2s/bin2o rules from devkitPRO makefiles
 - soundbank/mmutil rules from devkitPRO makefiles
 - Graphics processing with grit/gbagfx
 - Compression with gbalzss
@@ -17,6 +16,7 @@ devkitPro, some things are not (yet) supported, notably:
 
 Things that are supported:
 
+- Conversion of binary files with bin2s
 - Use of relative and symlinked file paths (../etc/hi.c)
 - Creating a multiboot build by adding `_mb` suffix to project name
 - `*.iwram.ext`, `*.arm.ext`, and `*.thumb.ext` filenames override ARM/THUMB code

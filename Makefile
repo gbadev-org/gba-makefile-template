@@ -31,6 +31,13 @@ SOURCE_DIRS	:=
 # Source file extensions, for use with SOURCE_DIRS
 SOURCE_EXTS	:=
 
+# Binary files to progress
+BINARY_FILES	:= src/hello.txt
+
+BINARY_DIRS	:=
+
+BINARY_EXTS	:=
+
 # Include directories
 INCLUDES	:=
 
@@ -44,7 +51,8 @@ LIBS		:= tonc
 BUILDDIR	:= build
 
 # Compiler flags (all languages)
-ALLFLAGS	:= -g3 -gdwarf-4 -O2 -ffunction-sections -fdata-sections \
+ALLFLAGS	:= -Wall -Wextra -g3 -gdwarf-4 -O2 \
+		   -ffunction-sections -fdata-sections \
 		   -D_DEFAULT_SOURCE
 
 # C compiler flags
@@ -77,6 +85,8 @@ pathmap	= $(1)$(subst $(subst ,, ),/,$(foreach component,$(subst /, ,$(2)),$(if 
 # Object and dependency filename functions
 obj	= $(call pathmap,$(BUILDDIR)/obj/,$(1),.o)
 dep	= $(call pathmap,$(BUILDDIR)/dep/,$(1),.d)
+gen_s	= $(call pathmap,$(BUILDDIR)/gen_sources/,$(1),$(2))
+gen_i	= $(call pathmap,$(BUILDDIR)/gen_include/,$(1),$(2))
 
 # Language detection by filenames (taken from GCC docs)
 is-c	= $(if $(filter %.c %.i %.h,$(1)),y,)
@@ -111,6 +121,7 @@ CXX	:= $(TOOLCHAIN)-g++
 AR	:= $(TOOLCHAIN)-ar
 OBJCOPY	:= $(TOOLCHAIN)-objcopy
 LD	:= $(if $(call is-cxx,$(SOURCES)),$(CXX),$(CC))
+BIN2S	:= $(DEVKITPRO)/tools/bin/bin2s
 GBAFIX	:= $(DEVKITPRO)/tools/bin/gbafix
 RUNNER	:= mgba-qt
 
@@ -149,10 +160,21 @@ SOURCES	:= $(SOURCE_FILES) \
 	   $(foreach dir,$(SOURCE_DIRS), \
 	   $(foreach ext,$(SOURCE_EXTS),$(wildcard $(dir)/*.$(ext))))
 
+BINARY	:= $(BINARY_FILES) \
+	   $(foreach dir,$(BINARY_DIRS), \
+	   $(foreach ext,$(BINARY_EXTS),$(wildcard $(dir)/*.$(ext))))
+
+GEN_S	:= $(foreach bin,$(BINARY),$(call gen_s,$(bin),.S))
+GEN_I	:= $(foreach bin,$(BINARY),$(call gen_i,$(bin),.h))
+
+SOURCES	+= $(GEN_S)
+
+ALLFLAGS += $(foreach dir,$(dir $(GEN_I)),-iquote $(dir))
+
 # Build artifacts
 OBJECTS	:= $(foreach source,$(SOURCES),$(call obj,$(source)))
 DEPENDS	:= $(foreach source,$(SOURCES),$(call dep,$(source)))
-DIRS	:= $(dir $(BUILDDIR) $(OBJECTS) $(DEPENDS))
+DIRS	:= $(dir $(BUILDDIR) $(OBJECTS) $(DEPENDS) $(GEN_S) $(GEN_I))
 
 #
 # Targets
@@ -165,9 +187,23 @@ else
 $(LIBFILE): $(OBJECTS)
 endif
 
-$(OBJECTS): | dirs
+$(OBJECTS): | dirs $(GEN_I)
 
-$(foreach source,$(SOURCES),$(eval $(call obj,$(source)): $(source)))
+define bin2s =
+$(call gen_s,$(1),.S) $(call gen_i,$(1),.h) &: $(1)
+	@echo "process $$<"
+	$$(SILENT)$$(BIN2S) -a 2 -H $(call gen_i,$(1),.h) $$< > $(call gen_s,$(1),.S)
+endef
+
+define compile =
+$(call obj,$(1)): $(1)
+endef
+
+# Process binary files
+$(foreach binary,$(BINARY),$(eval $(call bin2s,$(binary))))
+
+# Compile sources
+$(foreach source,$(SOURCES),$(eval $(call compile,$(source))))
 
 #
 # Rules
