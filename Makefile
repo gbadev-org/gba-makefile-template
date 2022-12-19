@@ -32,7 +32,7 @@ SOURCE_DIRS	:=
 SOURCE_EXTS	:=
 
 # Binary files to progress
-BINARY_FILES	:= src/hello.txt
+BINARY_FILES	:= src/hello.bin
 
 BINARY_DIRS	:=
 
