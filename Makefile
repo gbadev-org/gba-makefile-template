@@ -3,7 +3,7 @@ $(error Make sure DEVKITPRO and DEVKITARM are correctly set in your environment.
 endif
 
 # Name of your ROM
-PROJECT		:= devkitarm-template
+PROJECT		:= gba-template
 
 # Uncomment this if you're building a library
 #

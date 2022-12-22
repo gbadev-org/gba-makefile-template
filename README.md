@@ -1,20 +1,22 @@
-# devkitARM GBA Template
-
-NOTE: This project is not affiliated with devkitPro.
+# GBA Makefile Template
 
 This repository provides a solid template Makefile for GBA development with
 devkitARM, supporting C, C++, and Assembly.
 
-Build options inside the `Makefile` are commented and hopefully easy to use.
+## Usage
+
+- Modify the options inside `Makefile` to suit your needs, and run `make`.
+- To get verbose output, run `make V=1` or `make VERBOSE=1`.
+- To run a clean build, run `make -B`
 
 build.mk contains all of the build code, and you usually don't need to touch it
 at all.
 
 ## Features
 
-- soundbank.bin creation with mmutil
+- Soundbank creation with mmutil
 - Graphics processing with grit
-- Conversion of binary files with bin2s
+- Binary conversion with bin2s
 - Use of relative and symlinked file paths (../etc/hi.c)
 - Creating a multiboot build by adding `_mb` suffix to project name
 - `*.iwram.ext`, `*.arm.ext`, and `*.thumb.ext` filenames override ARM/THUMB code
