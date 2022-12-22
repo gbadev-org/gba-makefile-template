@@ -31,12 +31,20 @@ SOURCE_DIRS	:=
 # Source file extensions, for use with SOURCE_DIRS
 SOURCE_EXTS	:=
 
-# Binary files to progress
+# Binary files to process with bin2s
 BINARY_FILES	:= src/hello.bin
-
 BINARY_DIRS	:=
-
 BINARY_EXTS	:=
+
+# Audio files to process with mmutil
+AUDIO_FILES	:=
+AUDIO_DIRS	:=
+AUDIO_EXTS	:=
+
+# Graphics files to process with grit. Requires .grit files
+GRAPHICS_FILES	:=
+GRAPHICS_DIRS	:=
+GRAPHICS_EXTS	:=
 
 # Include directories
 INCLUDES	:=
@@ -82,11 +90,15 @@ eq	= $(if $(and $(findstring x$(1),x$(2)),$(findstring x$(2),x$(1))),y,)
 # Map relative directory names into build tree
 pathmap	= $(1)$(subst $(subst ,, ),/,$(foreach component,$(subst /, ,$(2)),$(if $(call eq,$(component),..),__,$(component))))$(3)
 
+glob	= $(foreach dir,$(1), \
+	$(foreach ext,$(2),$(wildcard $(dir)/*.$(ext))))
+
 # Object and dependency filename functions
 obj	= $(call pathmap,$(BUILDDIR)/obj/,$(1),.o)
 dep	= $(call pathmap,$(BUILDDIR)/dep/,$(1),.d)
 gen_s	= $(call pathmap,$(BUILDDIR)/gen_sources/,$(1),$(2))
 gen_i	= $(call pathmap,$(BUILDDIR)/gen_include/,$(1),$(2))
+gen_b	= $(call pathmap,$(BUILDDIR)/gen_binary/,$(1),$(2))
 
 # Language detection by filenames (taken from GCC docs)
 is-c	= $(if $(filter %.c %.i %.h,$(1)),y,)
@@ -123,6 +135,8 @@ OBJCOPY	:= $(TOOLCHAIN)-objcopy
 LD	:= $(if $(call is-cxx,$(SOURCES)),$(CXX),$(CC))
 BIN2S	:= $(DEVKITPRO)/tools/bin/bin2s
 GBAFIX	:= $(DEVKITPRO)/tools/bin/gbafix
+MMUTIL	:= $(DEVKITPRO)/tools/bin/mmutil
+GRIT	:= $(DEVKITPRO)/tools/bin/grit
 RUNNER	:= mgba-qt
 
 # Primary build artifacts
@@ -156,25 +170,33 @@ GFFLAGS	:= \
 	$(if $(strip $(ROM_MAKERCODE)),'-m$(strip $(ROM_MAKERCODE))',) \
 	$(if $(strip $(ROM_VERSION)),'-r$(strip $(ROM_VERSION))',)
 
-SOURCES	:= $(SOURCE_FILES) \
-	   $(foreach dir,$(SOURCE_DIRS), \
-	   $(foreach ext,$(SOURCE_EXTS),$(wildcard $(dir)/*.$(ext))))
+SOURCES	:= $(SOURCE_FILES) $(call glob,$(SOURCE_DIRS),$(SOURCE_EXTS))
 
-BINARY	:= $(BINARY_FILES) \
-	   $(foreach dir,$(BINARY_DIRS), \
-	   $(foreach ext,$(BINARY_EXTS),$(wildcard $(dir)/*.$(ext))))
+BINARY	:= $(BINARY_FILES) $(call glob,$(BINARY_DIRS),$(BINARY_EXTS))
 
-GEN_S	:= $(foreach bin,$(BINARY),$(call gen_s,$(bin),.S))
-GEN_I	:= $(foreach bin,$(BINARY),$(call gen_i,$(bin),.h))
+AUDIO	:= $(AUDIO_FILES) $(call glob,$(AUDIO_DIRS),$(AUDIO_EXTS))
+
+GRAPHICS:= $(GRAPHICS_FILES) $(call glob,$(GRAPHICS_DIRS),$(GRAPHICS_EXTS))
+
+GEN_B	:= $(if $(strip $(AUDIO)),$(call gen_b,soundbank.bin,))
+
+BINARY	+= $(GEN_B)
+
+GEN_S	:= $(foreach bin,$(BINARY),$(call gen_s,$(bin),.S)) \
+	   $(foreach gfx,$(GRAPHICS),$(call gen_s,$(gfx),.s))
 
 SOURCES	+= $(GEN_S)
+
+GEN_I	:= $(foreach bin,$(BINARY),$(call gen_i,$(bin),.h)) \
+	   $(foreach gfx,$(GRAPHICS),$(call gen_i,$(gfx),.h)) \
+	   $(if $(strip $(AUDIO)),$(call gen_i,soundbank.h,),)
 
 ALLFLAGS += $(foreach dir,$(dir $(GEN_I)),-iquote $(dir))
 
 # Build artifacts
 OBJECTS	:= $(foreach source,$(SOURCES),$(call obj,$(source)))
 DEPENDS	:= $(foreach source,$(SOURCES),$(call dep,$(source)))
-DIRS	:= $(dir $(BUILDDIR) $(OBJECTS) $(DEPENDS) $(GEN_S) $(GEN_I))
+DIRS	:= $(dir $(BUILDDIR) $(OBJECTS) $(DEPENDS) $(GEN_S) $(GEN_I) $(GEN_B))
 
 #
 # Targets
@@ -191,8 +213,15 @@ $(OBJECTS): | dirs $(GEN_I)
 
 define bin2s =
 $(call gen_s,$(1),.S) $(call gen_i,$(1),.h) &: $(1)
-	@echo "process $$<"
+	@echo "bin2s   $$<"
 	$$(SILENT)$$(BIN2S) -a 2 -H $(call gen_i,$(1),.h) $$< > $(call gen_s,$(1),.S)
+endef
+
+define grit =
+$(call gen_s,$(1),.s) $(call gen_i,$(1),.h) &: $(1) $(1).grit
+	@echo "grit    $$<"
+	$$(SILENT)$$(GRIT) -o$(call gen_s,$(1),.s) -ff$(1).grit $$<
+	$$(SILENT)mv $(call gen_s,$(1),.h) $(call gen_i,$(1),.h)
 endef
 
 define compile =
@@ -202,12 +231,19 @@ endef
 # Process binary files
 $(foreach binary,$(BINARY),$(eval $(call bin2s,$(binary))))
 
+# Process graphics files
+$(foreach graphic,$(GRAPHICS),$(eval $(call grit,$(graphic))))
+
 # Compile sources
 $(foreach source,$(SOURCES),$(eval $(call compile,$(source))))
 
 #
 # Rules
 #
+
+$(BUILDDIR)/gen_binary/soundbank.bin $(BUILDDIR)/gen_include/soundbank.h &: $(AUDIO)
+	@echo "mmutil  $@"
+	$(SILENT)$(MMUTIL) $^ -o$(BUILDDIR)/gen_binary/soundbank.bin -h$(BUILDDIR)/gen_include/soundbank.h
 
 %.o:
 	@echo "compile $<"
