@@ -5,7 +5,10 @@ NOTE: This project is not affiliated with devkitPro.
 This repository provides a solid template Makefile for GBA development with
 devkitARM, supporting C, C++, and Assembly.
 
-Build options inside the Makefile are documented and hopefully easy to use.
+Build options inside the `Makefile` are commented and hopefully easy to use.
+
+build.mk contains all of the build code, and you usually don't need to touch it
+at all.
 
 ## Features
 
