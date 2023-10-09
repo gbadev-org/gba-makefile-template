@@ -3,6 +3,8 @@ $(error Make sure DEVKITPRO and DEVKITARM are correctly set in your environment.
 endif
 
 # Name of your ROM
+#
+# Add _mb to the end to build a multiboot ROM.
 PROJECT		:= gba-template
 
 # Uncomment this if you're building a library
@@ -23,45 +25,30 @@ ROM_VERSION	:=
 #
 # Files
 #
-# Options ending in _FILES list individual files
-# Options ending in _DIRS and _EXTS are used for globbing
+# All options support glob patterns like `src/*.c`.
 #
-# For every directory listed in a _DIRS option, every file with an extension
-# listed in the matching _EXTS option is collected
-#
-# This process is not recursive, so if you have nested directories, you will
-# have to list all of them
-#
-# If you want to get every .c and .cpp file in a directory called source:
-#
-# SOURCE_DIRS := source
-# SOURCE_EXTS := c cpp
 
 # Binary files to process with bin2s
 BINARY_FILES	:= src/hello.bin
-BINARY_DIRS	:=
-BINARY_EXTS	:=
 
 # Audio files to process with mmutil
 AUDIO_FILES	:=
-AUDIO_DIRS	:=
-AUDIO_EXTS	:=
 
 # Graphics files to process with grit
 #
 # Every file requires an accompanying .grit file,
-# so gfx/test.png needs gfx/test.png.grit
-GRAPHICS_FILES	:=
-GRAPHICS_DIRS	:=
-GRAPHICS_EXTS	:=
+# so gfx/test.png needs gfx/test.grit
+GRAPHICS	:=
 
 # Source files to compile
-SOURCE_FILES	:= src/main.c
-SOURCE_DIRS	:=
-SOURCE_EXTS	:=
+SOURCES		:= src/main.c
 
 # Include directories
 INCLUDES	:=
+
+#
+# Dependencies
+#
 
 # Library directories, with /include and /lib
 LIBDIRS		:= $(DEVKITPRO)/libgba $(DEVKITPRO)/libtonc
@@ -69,12 +56,21 @@ LIBDIRS		:= $(DEVKITPRO)/libgba $(DEVKITPRO)/libtonc
 # Libraries to link
 LIBS		:= tonc
 
+#
+# Directories
+#
+
 # All build output goes here
 BUILDDIR	:= build
+
+#
+# Build Options
+#
 
 # Compiler flags (all languages)
 ALLFLAGS	:= -Wall -Wextra -g3 -gdwarf-4 -O2 \
 		-ffunction-sections -fdata-sections \
+		-masm-syntax-unified \
 		-D_DEFAULT_SOURCE
 
 # C compiler flags

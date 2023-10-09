@@ -10,15 +10,14 @@ eq	= $(if $(and $(findstring x$(1),x$(2)),$(findstring x$(2),x$(1))),y,)
 # Map relative directory names into build tree
 pathmap	= $(1)$(subst $(subst ,, ),/,$(foreach component,$(subst /, ,$(2)),$(if $(call eq,$(component),..),__,$(component))))$(3)
 
-glob	= $(foreach dir,$(1), \
-	$(foreach ext,$(2),$(wildcard $(dir)/*.$(ext))))
+glob	= $(foreach pat,$(1),$(wildcard $(pat)))
 
 # Object and dependency filename functions
 obj	= $(call pathmap,$(BUILDDIR)/obj/,$(1),.o)
 dep	= $(call pathmap,$(BUILDDIR)/dep/,$(1),.d)
-gen_s	= $(call pathmap,$(BUILDDIR)/gen_sources/,$(1),$(2))
-gen_i	= $(call pathmap,$(BUILDDIR)/gen_include/,$(1),$(2))
-gen_b	= $(call pathmap,$(BUILDDIR)/gen_binary/,$(1),$(2))
+gen_s	= $(call pathmap,$(BUILDDIR)/gen_src/,$(1),$(2))
+gen_i	= $(call pathmap,$(BUILDDIR)/gen_inc/,$(1),$(2))
+gen_b	= $(call pathmap,$(BUILDDIR)/gen_bin/,$(1),$(2))
 
 # Language detection by filenames (taken from GCC docs)
 is-c	= $(if $(filter %.c %.i %.h,$(1)),y,)
@@ -32,10 +31,10 @@ arch	= $(or \
 	$(if $(filter %.thumb,$(basename $(1))),-mthumb,))
 
 # Language-specific compiler flag list generation
-flags	= $(or \
+flags	= $(ALLFLAGS) $(or \
 	$(if $(call is-c,$(1)),$(CFLAGS),),\
 	$(if $(call is-cxx,$(1)),$(CXXFLAGS),),\
-	$(if $(call is-asm,$(1)),$(ASFLAGS),)) $(ALLFLAGS) $(call arch,$(1))
+	$(if $(call is-asm,$(1)),$(ASFLAGS),)) $(call arch,$(1))
 
 #
 # Internal Variables
@@ -77,6 +76,7 @@ ALLFLAGS += \
 
 # Default linker flags
 LDFLAGS	+= \
+	-Wl,-n \
 	-Wl,--gc-sections \
 	-Wl,-Map,$(MAPFILE) \
 	$(LIBDIRS:%=-L%/lib) \
@@ -90,13 +90,13 @@ GFFLAGS	:= \
 	$(if $(strip $(ROM_MAKERCODE)),'-m$(strip $(ROM_MAKERCODE))',) \
 	$(if $(strip $(ROM_VERSION)),'-r$(strip $(ROM_VERSION))',)
 
-SOURCES	:= $(SOURCE_FILES) $(call glob,$(SOURCE_DIRS),$(SOURCE_EXTS))
+SOURCES	:= $(call glob,$(SOURCES))
 
-BINARY	:= $(BINARY_FILES) $(call glob,$(BINARY_DIRS),$(BINARY_EXTS))
+BINARY	:= $(call glob,$(BINARY_FILES))
 
-AUDIO	:= $(AUDIO_FILES) $(call glob,$(AUDIO_DIRS),$(AUDIO_EXTS))
+AUDIO	:= $(call glob,$(AUDIO_FILES))
 
-GRAPHICS:= $(GRAPHICS_FILES) $(call glob,$(GRAPHICS_DIRS),$(GRAPHICS_EXTS))
+GRAPHICS:= $(filter-out %.grit,$(call glob,$(GRAPHICS)))
 
 GEN_B	:= $(if $(strip $(AUDIO)),$(call gen_b,soundbank.bin,))
 
@@ -140,7 +140,7 @@ endef
 define grit =
 $(call gen_s,$(1),.s) $(call gen_i,$(1),.h) &: $(1) $(1).grit
 	@echo "grit    $$<"
-	$$(SILENT)$$(GRIT) -o$(call gen_s,$(1),.s) -ff$(1).grit $$<
+	$$(SILENT)$$(GRIT) -o$(call gen_s,$(1),.s) -ff$(basename $(1)).grit $$<
 	$$(SILENT)mv $(call gen_s,$(1),.h) $(call gen_i,$(1),.h)
 endef
 
@@ -161,16 +161,16 @@ $(foreach source,$(SOURCES),$(eval $(call compile,$(source))))
 # Rules
 #
 
-$(BUILDDIR)/gen_binary/soundbank.bin $(BUILDDIR)/gen_include/soundbank.h &: $(AUDIO)
+$(BUILDDIR)/gen_bin/soundbank.bin $(BUILDDIR)/gen_inc/soundbank.h &: $(AUDIO)
 	@echo "mmutil  $@"
-	$(SILENT)$(MMUTIL) $^ -o$(BUILDDIR)/gen_binary/soundbank.bin -h$(BUILDDIR)/gen_include/soundbank.h
+	$(SILENT)$(MMUTIL) $^ -o$(BUILDDIR)/gen_bin/soundbank.bin -h$(BUILDDIR)/gen_inc/soundbank.h
 
 %.o:
 	@echo "compile $<"
 	$(SILENT)$(CC) -c -o $@ $(call flags,$<) -MMD -MP -MF $(call dep,$<) $<
 
 %.a:
-	@echo "archive $@"
+	@echo "library $@"
 	$(SILENT)rm -f $@
 	$(SILENT)$(AR) rcs $@ $^
 
@@ -185,6 +185,7 @@ $(BUILDDIR)/gen_binary/soundbank.bin $(BUILDDIR)/gen_include/soundbank.h &: $(AU
 
 dirs:
 	$(SILENT)mkdir -p $(DIRS)
+	$(SILENT)echo '*' > $(BUILDDIR)/.gitignore
 
 clean:
 	@echo "clean $(BUILDDIR)"
@@ -197,4 +198,3 @@ run: $(ELFFILE)
 .PHONY: dirs clean run
 
 -include $(DEPENDS)
-

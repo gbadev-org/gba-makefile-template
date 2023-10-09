@@ -17,12 +17,14 @@ at all.
 - Soundbank creation with mmutil
 - Graphics processing with grit
 - Binary conversion with bin2s
-- Use of relative and symlinked file paths (../etc/hi.c)
+- Use of relative and symlinked file paths (e.g. `../etc/hi.c`)
 - Creating a multiboot build by adding `_mb` suffix to project name
-- `*.iwram.ext`, `*.arm.ext`, and `*.thumb.ext` filenames override ARM/THUMB code
+- `*.iwram.*`, `*.arm.*`, and `*.thumb.*` filenames override ARM/THUMB code
 - Building with LTO
+- Building a static library
 - Specifying title, game code, etc. for gbafix
-- Running ROM in mGBA (by default) via `make run`
+- Running ROM in mGBA (by default) via `make run`. Custom runner via `make RUNNER=... run`
+- Automatic `.gitignore` creation in build directory
 
 ## License
 
