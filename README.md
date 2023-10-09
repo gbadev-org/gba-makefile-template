@@ -3,6 +3,10 @@
 This repository provides a solid template Makefile for GBA development with
 devkitARM, supporting C, C++, and Assembly.
 
+Note that this template requires GNU Make 4.3. Most systems should have it,
+however LTS Linux distros like Debian 10 or Ubuntu 20.04 might not.
+Check with `make --version`.
+
 ## Usage
 
 - Modify the options inside `Makefile` to suit your needs, and run `make`.
@@ -28,6 +32,6 @@ at all.
 
 ## License
 
-Repository is licensed under the [CC0 1.0 Universal License][CC0].
+This repository is licensed under the [CC0 1.0 Universal License][CC0].
 
 [CC0]: https://creativecommons.org/publicdomain/zero/1.0/
